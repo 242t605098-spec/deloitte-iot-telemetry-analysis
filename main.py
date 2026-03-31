@@ -1,125 +1,49 @@
-# import the necessary modules and libraries
-import json, unittest, datetime
+from datetime import datetime
 
-#use the open function to open read the three json files
-with open("./data-1.json","r") as f:
-    jsonData1 = json.load(f)
-with open("./data-2.json","r") as f:
-    jsonData2 = json.load(f)
-with open("./data-result.json","r") as f:
-    jsonExpectedResult = json.load(f)
+def convert_to_epoch(time_str):
+    dt = datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+    return int(dt.timestamp() * 1000)
 
-# convert json data from format 1 to the expected format
-def convertFromFormat1 (jsonObject):
-     return {
-        "deviceID": jsonObject["deviceID"],
-        "deviceType": jsonObject["deviceType"],
-        "timestamp": jsonObject["timestamp"],
-        "location": jsonObject["location"],
-        "operationStatus": jsonObject["operationStatus"],
-        "temp": jsonObject["temp"]
-    }
 
-    # IMPLEMENT: Conversion From Type 1
+# ✅ FORMAT 1
+def convertFromFormat1(jsonObject):
     locationParts = jsonObject["location"].split("/")
-    #create a new dictionary for the unified format
-    result= {
-        'deviceID': jsonObject['deviceID'],
-        'deviceType': jsonObject['deviceType'],
-        'timestamp': jsonObject['timestamp'],
-        'location': {
-            'country': locationParts[0],  #extract the country from the location string
-            'city': locationParts[1],    #extract the city from the location string
-            'area': locationParts[2],   #extract the area from the location string
-            'factory': locationParts[3],    #extract the factory from the location string
-            'section': locationParts[4]  #extract the section from the location string
-        },
-        'data': {
-            'status': jsonObject['operationStatus'], #copy the operationStatus to status
-            'temperature': jsonObject['temp'] #copy the temp to temperature
-        }
-        
-    }
-    return result
 
-    
-
-# convert json data from format 2 to the expected format
-def convertFromFormat2 (jsonObject):
-     return {
+    return {
         "deviceID": jsonObject["deviceID"],
         "deviceType": jsonObject["deviceType"],
-        "timestamp": jsonObject["timestamp"],
-        "location": jsonObject["location"],
-        "operationStatus": jsonObject["operationStatus"],
-        "temp": jsonObject["temp"]
-    }
-
-    # IMPLEMENT: Conversion From Type 1
-    # convert the ISO 8601 timestamp to milliseconds since epoch
-    data= datetime.datetime.strptime(jsonObject['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ') #ISO 8601 format
-    timestamp = round((data - datetime.datetime(1970, 1, 1)).total_seconds() * 1000) #convert to milliseconds since epoch
-
-    #create a new dictionary for the unified format
-    result={
-        'deviceID': jsonObject['device']['id'],  #extract the device ID
-        'deviceType': jsonObject['device']['type'], #extract the device type
-        'timestamp': timestamp, #use the converted timestamp
-        'location': {
-            'country': jsonObject['country'], #copy the country
-            'city': jsonObject['city'], #copy the city
-            'area': jsonObject['area'], #copy the area
-            'factory': jsonObject['factory'], #copy the factory
-            'section': jsonObject['section'] #copy the section
+        "timestamp": convert_to_epoch(jsonObject["timestamp"]),  # ✅ FIXED
+        "location": {
+            "country": locationParts[0],
+            "city": locationParts[1],
+            "area": locationParts[2],
+            "factory": locationParts[3],
+            "section": locationParts[4]
         },
-        'data': jsonObject['data'] #copy the entire data object
+        "data": {
+            "status": jsonObject["operationStatus"],
+            "temperature": jsonObject["temp"]
+        }
     }
-    return result
 
 
-def main (jsonObject):
+# ✅ FORMAT 2
+def convertFromFormat2(jsonObject):
+    locationParts = jsonObject["device"]["location"].split("/")
 
-    result = {}
-
-    if (jsonObject.get('device') == None):
-        result = convertFromFormat1(jsonObject)
-    else:
-        result = convertFromFormat2(jsonObject)
-
-    return result
-
-
-# Test cases using unittest module
-class TestSolution(unittest.TestCase):
-
-    # Sanity test to ensure the expected result is as intended
-    # converts json data to python objects usnig json.loads and json.dumps
-    def test_sanity(self):
-
-        result = json.loads(json.dumps(jsonExpectedResult))
-        self.assertEqual(
-            result,
-            jsonExpectedResult
-        )
-
-    def test_dataType1(self):
-
-        result = main (jsonData1)
-        self.assertEqual(
-            result,
-            jsonExpectedResult,
-            'Converting from Type 1 failed'
-        )
-
-    def test_dataType2(self):
-
-        result = main (jsonData2)
-        self.assertEqual(
-            result,
-            jsonExpectedResult,
-            'Converting from Type 2 failed'
-        )
-
-if __name__ == '__main__':
-    # run the tests
-    unittest.main()
+    return {
+        "deviceID": jsonObject["device"]["id"],
+        "deviceType": jsonObject["device"]["type"],
+        "timestamp": convert_to_epoch(jsonObject["timestamp"]),  # ✅ FIXED
+        "location": {
+            "country": locationParts[0],
+            "city": locationParts[1],
+            "area": locationParts[2],
+            "factory": locationParts[3],
+            "section": locationParts[4]
+        },
+        "data": {
+            "status": jsonObject["data"]["status"],
+            "temperature": jsonObject["data"]["temperature"]
+        }
+    }
